@@ -8,7 +8,7 @@ const getCameras = async () => (await readFile(__dirname + '/../data/cameras-def
 	.slice(1)
 	.map(line => {
 		const [name, latitude, longitude] = line.split(';');
-		return {id: name.replace(/\D/g, ''), name, latitude, longitude};
+		return {number: name.replace(/\D/g, ''), name, latitude, longitude};
 	});
 
 module.exports = getCameras;

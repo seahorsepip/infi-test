@@ -189,15 +189,37 @@
 	</table>
 </main>
 <script>
+	// Initialize variables
+	let cameras = [];
+	let mapInitialized = false;
+	let mapRendered = false;
+
+	// Render cameras on map (method is called from multiple methods due to a race condition)
+	const renderMap = () => {
+		if (!cameras.length || !mapInitialized) return;
+		mapRendered = true;
+
+		const {latitude, longitude} = cameras[0];
+		const map = new google.maps.Map(document.getElementById('map'), {
+			zoom: 13,
+			center: {lat: Number(latitude), lng: Number(longitude)}
+		});
+		cameras.map(({latitude, longitude}) => new google.maps.Marker({
+			position: {lat: Number(latitude), lng: Number(longitude)},
+			map: map
+		}));
+	};
+
+	// Async scope
 	(async () => {
 		// Get cameras
-		const cameras = await (await fetch('/api/cameras')).json();
+		cameras = await (await fetch('/api/cameras')).json();
 
 		// Add camera to column
-		const addToColumn = ({id, name, latitude, longitude}, column) => {
+		const addToColumn = ({number, name, latitude, longitude}, column) => {
 			const tbody = document.getElementById(column).getElementsByTagName('tbody')[0];
 			const tr = document.createElement('tr');
-			tr.append(...[id, name, latitude, longitude].map(text => {
+			tr.append(...[number, name, latitude, longitude].map(text => {
 				const td = document.createElement('td');
 				td.innerText = text;
 				return td;
@@ -212,11 +234,22 @@
 			{value: 3, column: 'column3'},
 			{value: 1, column: 'columnOther'}
 		].reduce((cameras, {value, column}) => cameras.filter(camera => {
-			const divisible = camera.id % value === 0;
+			const divisible = camera.number % value === 0;
 			if (divisible) addToColumn(camera, column);
 			return !divisible;
 		}), cameras);
+
+		// Render cameras on map
+		renderMap();
 	})();
+
+	// Callback for google maps API
+	initMap = () => {
+		mapInitialized = true;
+		renderMap();
+	};
 </script>
+<-- Works fine without API key for demo purposes -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap"></script>
 </body>
 </html>
