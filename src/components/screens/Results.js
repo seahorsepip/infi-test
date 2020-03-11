@@ -12,7 +12,7 @@ const Table = importJsx('ink-table').default;
 const csv = fs.readFileSync(__dirname + '/../../data/cameras-defb.csv', 'utf8').trimEnd();
 let cameras = csv.split('\n').slice(1).map(line => {
 	const [name, latitude, longitude] = line.split(';');
-	return {name, latitude, longitude};
+	return {id: name.replace(/\D/g, ''), name, latitude, longitude};
 });
 
 // Pad all camera names with spaces to match length from longest camera name
