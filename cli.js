@@ -5,18 +5,38 @@ const importJsx = require('import-jsx');
 const {render} = require('ink');
 const meow = require('meow');
 
-const ui = importJsx('./ui');
+const App = importJsx('./src/App');
 
 const cli = meow(`
 	Usage
 	  $ infi-test
 
 	Options
-		--name  Your name
+		--name, -n				(optional) Search camera by name
+		--case-sensitive, -c	(optional) Compare with case sensitivity
 
 	Examples
-	  $ infi-test --name=Jane
-	  Hello, Jane
-`);
+	  $ infi-test
+	  Search camera by name
 
-render(React.createElement(ui, cli.flags));
+	  $ infi-test --name=laan
+	  17 cameras found that match laan
+
+	  $ infi-test --name=laan --case-sensitive=false
+	  18 cameras found that match laan
+`, {
+	flags: {
+		name: {
+			type: 'string',
+			alias: 'n'
+		},
+		caseSensitive: {
+			type: 'boolean',
+			alias: 'c',
+			default: true
+		}
+	}
+});
+
+console.clear();
+render(React.createElement(App, cli.flags));
