@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-const React = require('react');
-const importJsx = require('import-jsx');
-const {render} = require('ink');
 const meow = require('meow');
-
-const App = importJsx('./src/App');
 
 const cli = meow(`
 	Usage
@@ -14,6 +9,7 @@ const cli = meow(`
 	Options
 		--name, -n				(optional) Search camera by name
 		--case-sensitive, -c	(optional) Compare with case sensitivity
+		--web, -w				(optional) Start web server and show cameras in browser
 
 	Examples
 	  $ infi-test
@@ -34,9 +30,23 @@ const cli = meow(`
 			type: 'boolean',
 			alias: 'c',
 			default: true
+		},
+		web: {
+			type: 'number',
+			alias: 'w'
 		}
 	}
 });
 
 console.clear();
-render(React.createElement(App, cli.flags));
+
+if ('web' in cli.flags) {
+	require('./src/api')(cli.flags.web || 3000);
+} else {
+	const React = require('react');
+	const importJsx = require('import-jsx');
+	const {render} = require('ink');
+	const App = importJsx('./src/cli/App');
+
+	render(React.createElement(App, cli.flags));
+}

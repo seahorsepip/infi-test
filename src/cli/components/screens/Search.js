@@ -2,7 +2,7 @@
 const React = require('react');
 const {useState} = React;
 const importJsx = require('import-jsx');
-const {Color, Box, useInput} = require('ink');
+const {Color, Box, Text, useInput} = require('ink');
 const TextInput = importJsx('ink-text-input').default;
 
 // UI elements that can be focused
@@ -31,26 +31,27 @@ const Search = ({setQuery}) => {
 
 	return (
 		<Box flexDirection={'column'} paddingX={3} paddingY={2}>
-			Search camera by name
-			<Box height={1}/>
-			{/*<Color cyan={focus === SEARCH_INPUT}>Search camera by name</Color>*/}
-			<Color cyan={focus === SEARCH_INPUT}>╭{'─'.repeat(inputLength)}╮</Color>
-			<Box>
-				<Color cyan={focus === SEARCH_INPUT}>│</Color>
-				<Color grey={!keywords}>
-					<TextInput value={keywords} onChange={handleChange}
-							   placeholder={'Enter keywords...'.padEnd(inputLength, ' ')} showCursor={false}/>
-					{' '.repeat(keywords.length ? inputLength - keywords.length : 0)}
-				</Color>
-				<Color cyan={focus === SEARCH_INPUT}>│</Color>
-			</Box>
-			<Color cyan={focus === SEARCH_INPUT}>╰{'─'.repeat(inputLength)}╯</Color>
-			<Color cyan={focus === CASE_SENSITIVE_CHECKBOX}>
-				&nbsp;{isCaseSensitive ? '√' : 'X'} Case sensitive
+			<Box marginBottom={1}>Search camera by name</Box>
+			<Color cyan={focus === SEARCH_INPUT}>
+				<Box flexDirection={'column'}>
+					<Text>╭{'─'.repeat(inputLength)}╮</Text>
+					<Box>
+						│
+						<Color grey={!isValid} white={isValid}>
+							<TextInput value={keywords} onChange={handleChange}
+									   placeholder={'Enter keywords...'.padEnd(inputLength, ' ')} showCursor={false}/>
+							{' '.repeat(keywords.length ? inputLength - keywords.length : 0)}
+						</Color>
+						│
+					</Box>
+					<Text>╰{'─'.repeat(inputLength)}╯</Text>
+				</Box>
 			</Color>
-			<Box height={1}/>
-			<Color black={isValid} grey={!isValid}
-				   bgWhite={focus !== SUBMIT_BUTTON} bgCyan={focus === SUBMIT_BUTTON}> Submit → </Color>
+			<Box marginLeft={1} marginBottom={1}>
+				<Color cyan={focus === CASE_SENSITIVE_CHECKBOX}>{isCaseSensitive ? '√' : 'X'} Case sensitive</Color>
+			</Box>
+			<Color black={isValid} grey={!isValid} bgWhite={focus !== SUBMIT_BUTTON}
+				   bgCyan={focus === SUBMIT_BUTTON}> Submit → </Color>
 		</Box>
 	);
 };

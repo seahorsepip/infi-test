@@ -7,6 +7,8 @@
 		"node": ">=8"
 	},
 	"dependencies": {
+		"express": "^4.17.1",
+		"fromentries": "^1.2.0",
 		"import-jsx": "^3.1.0",
 		"ink": "^2.7.1",
 		"ink-table": "^2.0.1",

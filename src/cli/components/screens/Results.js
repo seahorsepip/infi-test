@@ -1,32 +1,25 @@
 'use strict';
 const React = require('react');
-const {useState} = React;
+const {useState, useEffect} = React;
 const importJsx = require('import-jsx');
-const {Text, Color, Box, useInput} = require('ink');
-const fs = require('fs');
+const {Color, Box, useInput} = require('ink');
 const open = require('open');
 const Table = importJsx('ink-table').default;
-
-
-// Get cameras from CSV file
-const csv = fs.readFileSync(__dirname + '/../../data/cameras-defb.csv', 'utf8').trimEnd();
-let cameras = csv.split('\n').slice(1).map(line => {
-	const [name, latitude, longitude] = line.split(';');
-	return {id: name.replace(/\D/g, ''), name, latitude, longitude};
-});
-
-// Pad all camera names with spaces to match length from longest camera name
-const longestCameraNameLength = Math.max(...cameras.map(({name}) => name.length));
-cameras = cameras.map(camera => ({
-	...camera,
-	name: camera.name.padEnd(longestCameraNameLength, ' ')
-}));
+const getCameras = require('../../../services/camera');
+const {capitalize, padAllValuesToMaxLength} = require('../../../util/util');
 
 // UI elements that can be focused
 const BACK_BUTTON = 0;
 const RESULTS_TABLE = 1;
 
 const Results = ({query: {keywords, isCaseSensitive}, setQuery}) => {
+	const [data, setData] = useState([]);
+	const [focus, setFocus] = useState(BACK_BUTTON);
+	const [selected, setSelected] = useState(0);
+	const [offset, setOffset] = useState(0);
+	const rows = Math.min(data.length, 5);
+
+	const filter = cameras => cameras.filter(camera => keywords.some(keyword => compare(camera.name, keyword)));
 	const compare = (a, b) => {
 		if (!isCaseSensitive) {
 			a = a.toLowerCase();
@@ -34,12 +27,13 @@ const Results = ({query: {keywords, isCaseSensitive}, setQuery}) => {
 		}
 		return a.includes(b);
 	};
-	const data = cameras.filter(camera => keywords.some(keyword => compare(camera.name, keyword)));
-	const rows = Math.min(data.length, 5);
 
-	const [focus, setFocus] = useState(!!data.length ? RESULTS_TABLE : BACK_BUTTON);
-	const [selected, setSelected] = useState(0);
-	const [offset, setOffset] = useState(0);
+	useEffect(() => {
+		getCameras().then(padAllValuesToMaxLength).then(filter).then(setData);
+	}, [keywords.join(), isCaseSensitive]);
+	useEffect(() => {
+		setFocus(data.length ? RESULTS_TABLE : BACK_BUTTON);
+	}, [data.length]);
 
 	useInput((input, key) => {
 		if (focus === RESULTS_TABLE && key.upArrow) {
@@ -61,11 +55,10 @@ const Results = ({query: {keywords, isCaseSensitive}, setQuery}) => {
 		}
 	});
 
-	const capitalize = str => str.replace(/^\w/, c => c.toUpperCase());
-	const renderHeader = ({children}) => <Color cyan>{children.map(capitalize)}</Color>;
 	let cellRenderCount = 0;
+	const renderHeader = ({children}) => <Color cyan>{children.map(capitalize)}</Color>;
 	const renderCell = ({children}) => {
-		const rowIndex = Math.floor(cellRenderCount++ / Object.keys(cameras[0]).length);
+		const rowIndex = Math.floor(cellRenderCount++ / Object.keys(data[0]).length);
 		if (rowIndex === selected && focus === RESULTS_TABLE) children = <Color black bgCyan>{children}</Color>;
 		return children;
 	};
@@ -73,18 +66,14 @@ const Results = ({query: {keywords, isCaseSensitive}, setQuery}) => {
 	return (
 		<Box flexDirection={'column'} paddingX={3} paddingY={2}>
 			<Color black bgWhite={focus !== BACK_BUTTON} bgCyan={focus === BACK_BUTTON}> ← Search </Color>
-			<Box height={1}/>
-			<Text>{data.length} cameras found that match <Color cyan>{keywords.join(' ')}</Color></Text>
-			<Box height={1}/>
+			<Box marginY={1}>{data.length} cameras found that match <Color cyan>{keywords.join(' ')}</Color></Box>
 			{!!data.length && (
 				<>
 					<Table data={data.slice(offset, offset + rows)} header={renderHeader} cell={renderCell}/>
-
-					<Box height={1}/>
-					<Text>
+					<Box marginTop={1}>
 						Select camera with <Color cyan>↑↓ arrow keys</Color> and
 						press <Color cyan>enter</Color> to open in google maps
-					</Text>
+					</Box>
 				</>
 			)}
 		</Box>
