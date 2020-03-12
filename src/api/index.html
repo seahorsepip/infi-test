@@ -204,7 +204,7 @@
 			zoom: 13,
 			center: {lat: Number(latitude), lng: Number(longitude)}
 		});
-		cameras.map(({latitude, longitude}) => new google.maps.Marker({
+		cameras.forEach(({latitude, longitude}) => new google.maps.Marker({
 			position: {lat: Number(latitude), lng: Number(longitude)},
 			map: map
 		}));
