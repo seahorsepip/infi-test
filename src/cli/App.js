@@ -16,19 +16,20 @@ const RESULTS_TABLE = 2;
 
 const App = ({name, caseSensitive}) => {
 	const [data, setData] = useState([]);
-	const [focus, setFocus] = useState(RESULTS_TABLE);
+	const [focus, setFocus] = useState(SEARCH_INPUT);
 	const [selected, setSelected] = useState(0);
 	const [offset, setOffset] = useState(0);
 	const {stdout} = useStdout();
-	const [rows, setRows] = useState(stdout.rows);
-	const tableRows = Math.min(data.length, Math.max(Math.floor((rows - 18) / 2), 5));
+	const [{rows, columns}, setSize] = useState({rows: stdout.rows, columns: stdout.columns});
+	const verticalLayout = columns < 60;
+	const tableRows = Math.min(data.length, Math.max(Math.floor((rows - (verticalLayout ? 20 : 18)) / 2), 5));
 	const [keywords, setKeywords] = useState(name || '');
 	const [isCaseSensitive, setIsCaseSensitive] = useState(caseSensitive);
-	const inputLength = 32;
+	const inputLength = columns - (verticalLayout ? 8 : 26);
 	const isValid = !!keywords.trim().length;
 	const tableWidth = Object.entries(data[0] || {}).reduce((sum, [key, value]) => sum + Math.max(key.length, value.length) + 3, 0) + 1;
 
-	const handleChange = value => focus === SEARCH_INPUT && setKeywords(value.replace(/ +(?= )/g, '').slice(0, inputLength));
+	const handleChange = value => focus === SEARCH_INPUT && setKeywords(value.trimStart().replace(/ +(?= )/g, '').slice(0, inputLength));
 	const compare = (a, b) => {
 		if (!isCaseSensitive) {
 			a = a.toLowerCase();
@@ -36,16 +37,25 @@ const App = ({name, caseSensitive}) => {
 		}
 		return a.includes(b);
 	};
-	const results = data.filter(camera => keywords.split(' ').filter(Boolean).some(keyword => compare(camera.name, keyword)));
+	const results = data
+		.filter(camera => keywords.split(' ').filter(Boolean).some(keyword => compare(camera.name, keyword)))
+		.map(camera => {
+			let {name} = camera;
+			const diff = columns - tableWidth - 4;
+			if (diff < 0) name = name.slice(0, diff);
+			else name += ' '.repeat(diff);
+			if (camera.name.trimEnd().length > name.length) name = name.slice(0, -1) + '…';
+			return {...camera, name};
+		});
 
 	useEffect(() => {
 		getCameras().then(padAllValuesToMaxLength).then(setData);
 	}, []);
 	useEffect(() => {
-		!results.length && setFocus(SEARCH_INPUT);
+		!results.length && focus === RESULTS_TABLE && setFocus(SEARCH_INPUT);
 	}, [keywords, isCaseSensitive]);
 	useEffect(() => {
-		stdout.on('resize', () => setRows(stdout.rows));
+		stdout.on('resize', () => setSize({rows: stdout.rows, columns: stdout.columns}));
 	}, [stdout]);
 
 	useInput((input, key) => {
@@ -81,8 +91,9 @@ const App = ({name, caseSensitive}) => {
 	return (
 		<Box flexDirection={'column'} paddingX={2} paddingY={1}>
 			<Box marginBottom={1}>Search camera by name</Box>
-			<Box alignItems={'center'} marginBottom={1}>
-				<Color cyan={focus === SEARCH_INPUT}>
+			<Box alignItems={verticalLayout ? 'flex-start' : 'center'} marginBottom={1}
+				 flexDirection={verticalLayout ? 'column' : 'row'}>
+				<Color cyan={focus === SEARCH_INPUT} grey={focus !== SEARCH_INPUT}>
 					<Box flexDirection={'column'}>
 						<Text>╭{'─'.repeat(inputLength + 2)}╮</Text>
 						<Box>
@@ -98,16 +109,16 @@ const App = ({name, caseSensitive}) => {
 						<Text>╰{'─'.repeat(inputLength + 2)}╯</Text>
 					</Box>
 				</Color>
-				<Box marginLeft={2}>
+				<Box marginLeft={verticalLayout ? 0 : 2} marginY={1}>
 					<Color cyan={focus === CASE_SENSITIVE_CHECKBOX}>{isCaseSensitive ? '√' : 'X'} Case sensitive</Color>
 				</Box>
 			</Box>
-			{!!keywords.length && <Color grey>{'─'.repeat(tableWidth)}</Color>}
+			{!!keywords.length && <Color grey>{'─'.repeat(columns - 4)}</Color>}
 			{!!keywords.length && <Box marginY={1}>{results.length} cameras found</Box>}
 			{!!results.length && (
 				<>
 					<Table data={results.slice(offset, offset + tableRows)} header={renderHeader} cell={renderCell}/>
-					<Box marginTop={1}>
+					<Box marginTop={1} textWrap={'truncate-end'}>
 						Select camera with <Color cyan>↑↓ arrow keys</Color> and
 						press <Color cyan>enter</Color> to open in google maps
 					</Box>
