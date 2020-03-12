@@ -18,6 +18,7 @@ $ infi-test --help
   Options
     --name, -n              (optional) Search camera by name
     --case-sensitive, -c    (optional) Compare with case sensitivity
+    --web, -w               (optional) Start web server and show cameras in browser
 
   Examples
     $ infi-test
@@ -28,4 +29,7 @@ $ infi-test --help
 
     $ infi-test -n=laan -c=false
     18 cameras found that match laan
+
+    $ infi-test -web
+    Web server listening on port 3000!
 ```

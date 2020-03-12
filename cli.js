@@ -20,6 +20,9 @@ const cli = meow(`
 
 	  $ infi-test --name=laan --case-sensitive=false
 	  18 cameras found that match laan
+
+	  $ infi-test -web
+	  Web server listening on port 3000!
 `, {
 	flags: {
 		name: {
